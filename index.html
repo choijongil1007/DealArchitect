@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Architect - Sales Deal Management</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'Inter', 'Pretendard', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1E293B',
+                            900: '#0F172A',
+                        },
+                        indigo: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+                        'card': '0 0 0 1px rgba(226, 232, 240, 1), 0 2px 4px rgba(0, 0, 0, 0.04)',
+                        'card-hover': '0 0 0 1px rgba(203, 213, 225, 1), 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
+                        'modal': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        'float': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom Fonts (Outfit & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Pretendard Font (Korean) -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- html2pdf.js for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "vite": "https://aistudiocdn.com/vite@^7.2.7",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-800">
+    
+    <!-- Global Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-6 lg:px-12 transition-all duration-300 no-print">
+        <div class="flex items-center gap-3 cursor-pointer group" id="nav-logo">
+            <div class="w-9 h-9 bg-slate-900 text-white flex items-center justify-center rounded-lg text-sm font-bold shadow-sm group-hover:bg-indigo-600 transition-colors duration-300">D</div>
+            <span class="font-bold text-lg tracking-tight text-slate-900">Deal Architect</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="nav-back-btn" class="hidden text-sm font-bold text-slate-600 bg-white border border-slate-300 shadow-sm hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition-all px-4 py-2 rounded-lg">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Deal 목록으로
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main id="app" class="max-w-[1280px] mx-auto p-4 md:p-6 pb-20 min-h-[calc(100vh-4rem)]">
+        <!-- Views will be injected here -->
+        <div class="flex flex-col items-center justify-center h-64 text-center">
+            <div class="spinner mb-4"></div>
+            <p class="text-slate-500 font-medium">Initializing Deal Architect...</p>
+        </div>
+    </main>
+
+    <!-- Global Loading Overlay -->
+    <div id="global-loader" class="fixed inset-0 bg-white/90 z-[60] hidden flex flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300 no-print">
+        <div class="spinner mb-5"></div>
+        <p class="text-slate-600 font-medium text-sm tracking-wide animate-pulse" id="loader-text">처리 중...</p>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-8 right-8 z-[70] flex flex-col gap-3 no-print"></div>
+
+    <!-- Solution Map Modals -->
+    <div id="solution-map-modals">
+        <!-- Warning Modal -->
+        <div id="warning-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center p-4">
+            <div id="warning-modal-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"></div>
+            <div id="warning-modal-panel" class="relative bg-white rounded-xl shadow-modal p-6 max-w-sm w-full transform transition-all scale-95 opacity-0 border border-slate-100">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-4 border border-amber-100">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">알림</h3>
+                    <p id="warning-modal-message" class="text-slate-600 text-sm mb-6 leading-relaxed"></p>
+                    <button id="warning-modal-close" class="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors text-sm shadow-sm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirm Modal -->
+        <div id="confirm-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center p-4">
+            <div id="confirm-modal-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"></div>
+            <div id="confirm-modal-panel" class="relative bg-white rounded-xl shadow-modal p-6 max-w-sm w-full transform transition-all scale-95 opacity-0 border border-slate-100">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center mb-4 border border-indigo-100">
+                        <i class="fa-solid fa-question text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">확인</h3>
+                    <p id="confirm-modal-message" class="text-slate-600 text-sm mb-6 leading-relaxed"></p>
+                    <div class="flex gap-3 w-full">
+                        <button id="confirm-modal-cancel" class="flex-1 bg-white border border-slate-300 text-slate-700 py-2.5 rounded-lg font-medium hover:bg-slate-50 transition-colors text-sm">취소</button>
+                        <button id="confirm-modal-ok" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm shadow-sm">확인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solution Detail Modal -->
+        <div id="solution-detail-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
+            <div id="detail-modal-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0"></div>
+            <div id="detail-modal-panel" class="relative bg-white rounded-2xl shadow-float w-full max-w-md overflow-hidden transform transition-all scale-95 opacity-0 border border-slate-200">
+                <div class="bg-slate-900 px-6 py-5 flex justify-between items-start">
+                    <div>
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-2">
+                            <span id="detail-manufacturer"></span>
+                            <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                            <span class="text-emerald-400 font-bold" id="detail-share"></span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white tracking-tight" id="detail-name"></h3>
+                    </div>
+                    <button id="detail-modal-close" class="text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Pain Points
+                        </h4>
+                        <ul id="detail-painpoints" class="space-y-2 bg-slate-50 rounded-xl p-4 border border-slate-100"></ul>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <i class="fa-regular fa-note-sticky text-slate-500"></i> Note
+                        </h4>
+                        <p id="detail-note" class="text-sm text-slate-600 leading-relaxed bg-white border border-slate-200 p-3 rounded-lg shadow-sm"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Solution Input Modal -->
+        <div id="solution-modal" class="fixed inset-0 z-[130] hidden flex items-center justify-center p-4">
+            <div id="solution-modal-backdrop" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0"></div>
+            <div id="solution-modal-panel" class="relative bg-white rounded-2xl shadow-modal w-full max-w-lg transform transition-all scale-95 opacity-0 overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center shrink-0">
+                    <h3 id="solution-modal-title" class="text-lg font-bold text-slate-900">솔루션 추가</h3>
+                    <button id="solution-modal-cancel" class="text-slate-400 hover:text-slate-600 transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Scrollable Body -->
+                <div class="p-6 overflow-y-auto custom-scrollbar">
+                    <div class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">제조사 (Manufacturer)</label>
+                                <input type="text" id="sol-manufacturer" class="input-enterprise w-full" placeholder="예: Atlassian">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">제품명 (Product Name)</label>
+                                <input type="text" id="sol-name" class="input-enterprise w-full" placeholder="예: Jira Software">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">점유율 (Share %)</label>
+                            <div class="flex items-center gap-4">
+                                <input type="range" id="sol-share" min="0" max="100" value="10" step="5" class="slider-enterprise flex-1" oninput="document.getElementById('sol-share-disp').innerText = this.value + '%'">
+                                <span id="sol-share-disp" class="text-sm font-bold text-indigo-600 w-12 text-right">10%</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100">
+                            <div class="flex justify-between items-end mb-3">
+                                <label class="block text-xs font-bold text-slate-500 ml-1">고객 불만사항 (Pain Points)</label>
+                                <button type="button" id="btn-analyze-painpoints" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 border border-indigo-100">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석
+                                </button>
+                            </div>
+                            
+                            <!-- Analysis Loading State -->
+                            <div id="painpoint-loading" class="hidden py-6 text-center">
+                                <div class="spinner border-indigo-500 border-t-transparent w-6 h-6 mx-auto mb-2"></div>
+                                <span class="text-xs text-indigo-500 font-medium">제품 리뷰 분석 중...</span>
+                            </div>
+
+                            <div id="painpoint-list" class="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar min-h-[60px] bg-slate-50 rounded-xl p-2 border border-slate-200/60">
+                                <p class="text-xs text-slate-400 text-center py-4">제조사와 제품명을 입력 후 'AI 분석' 버튼을 눌러주세요.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">비고 (Note)</label>
+                            <textarea id="sol-note" class="input-enterprise w-full min-h-[80px] resize-none" placeholder="추가적인 참고사항이나 특이사항"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0 rounded-b-2xl">
+                    <button id="solution-modal-save" class="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg text-sm">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Tooltip for Treemap -->
+        <div id="custom-tooltip" class="fixed hidden bg-slate-800 text-white text-xs px-3 py-2 rounded-lg shadow-xl pointer-events-none z-[200] border border-slate-700 font-medium leading-relaxed max-w-xs text-center backdrop-blur-sm bg-opacity-95"></div>
+
+        <!-- Save Report Modal -->
+        <div id="modal-save-report" class="fixed inset-0 z-[130] hidden flex items-center justify-center p-4">
+            <div id="modal-save-report-bg" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0"></div>
+            <div id="modal-save-report-panel" class="relative bg-white rounded-xl shadow-modal p-6 max-w-sm w-full transform transition-all scale-95 opacity-0 border border-slate-200">
+                <h3 class="text-lg font-bold text-slate-900 mb-4">보고서 저장</h3>
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">보고서 제목</label>
+                    <input type="text" id="input-report-name" class="input-enterprise w-full" placeholder="예: Jira vs ServiceNow 경쟁분석">
+                </div>
+                <div class="flex gap-3 justify-end">
+                    <button id="btn-cancel-save-report" class="text-slate-500 hover:text-slate-700 font-medium text-sm px-3">취소</button>
+                    <button id="btn-confirm-save-report" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors text-sm shadow-md">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "DealArchitect",
+  "description": "A real-time editor and previewer for raw HTML, CSS, and JavaScript projects. Features a live execution environment and clean interface.",
+  "requestFramePermissions": []
+}
