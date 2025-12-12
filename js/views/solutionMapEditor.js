@@ -490,7 +490,6 @@ function showAddCategoryInput(domainName) {
         render();
     }
 
-    const safeName = domainName.replace(/"/g, '\\"');
     // Simple selector might fail with special chars, fallback loop in render prevents most issues,
     // but here we just re-render to ensure DOM is fresh.
     const contentBox = document.querySelector(`[data-domain-content="${CSS.escape(domainName)}"]`);
@@ -587,5 +586,73 @@ function showEditDomainInput(domain, headerEl) {
     };
 
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') save();
-        
+        if (e.key === 'Enter') { save(); e.stopPropagation(); }
+        if (e.key === 'Escape') { titleEl.innerText = originalText; e.stopPropagation(); }
+    });
+    input.addEventListener('blur', save);
+    titleEl.appendChild(input);
+    input.focus();
+}
+
+function removeTempInputs() {
+    const temps = document.querySelectorAll('.temp-input-row');
+    temps.forEach(el => el.remove());
+}
+
+function createActionButton(iconSvg, colorClass, title) {
+    const btn = document.createElement('div');
+    btn.className = `p-1.5 rounded-md hover:bg-slate-100 cursor-pointer transition-colors ${colorClass}`;
+    btn.innerHTML = iconSvg;
+    if (title) btn.title = title;
+    return btn;
+}
+
+function createMiniButton(iconSvg, colorClass) {
+    const btn = document.createElement('button');
+    btn.className = `p-1.5 rounded-lg transition-colors ${colorClass}`;
+    btn.innerHTML = iconSvg;
+    return btn;
+}
+
+function toggleExpand(id) {
+    if (expandedState.has(id)) {
+        expandedState.delete(id);
+    } else {
+        expandedState.add(id);
+    }
+    render();
+}
+
+function deleteDomain(domain) {
+    if (confirm(`'${domain}' 대분류와 하위 항목을 모두 삭제하시겠습니까?`)) {
+        Store.deleteDomain(currentDealId, domain);
+        if(refreshCallback) refreshCallback();
+        render();
+    }
+}
+
+function deleteCategory(domain, category) {
+    if (confirm(`'${category}' 중분류를 삭제하시겠습니까?`)) {
+        Store.deleteCategory(currentDealId, domain, category);
+        if(refreshCallback) refreshCallback();
+        render();
+    }
+}
+
+function deleteSolution(domain, category, index) {
+    if (confirm('이 솔루션을 삭제하시겠습니까?')) {
+        Store.deleteSolution(currentDealId, domain, category, index);
+        if(refreshCallback) refreshCallback();
+        render();
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return text;
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
